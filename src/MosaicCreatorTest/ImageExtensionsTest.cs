@@ -19,6 +19,18 @@ namespace MosaicCreator
         }
 
         [Fact]
+        public void ScaleShouldWorkEvenIfRatioCanNoLongerBeMaintained()
+        {
+            var desiredSize = new Size(1, 1);
+            using var image = Image.FromFile("TestData/WidescreenImage.png");
+
+            using var newImage = image.Scale(desiredSize);
+
+            Assert.Equal(1, newImage.Width);
+            Assert.Equal(1, newImage.Height);
+        }
+
+        [Fact]
         public void ResizeShouldWork()
         {
              var desiredSize = new Size(100, 100);

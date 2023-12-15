@@ -58,7 +58,7 @@ namespace MosaicCreator
                 newHeight = originalSize.Height;
             }
 
-            return new Size(newWidth, newHeight);
+            return new Size(Math.Max(1, newWidth), Math.Max(1, newHeight));
         }
     }
 }
