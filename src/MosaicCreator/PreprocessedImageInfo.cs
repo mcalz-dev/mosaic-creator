@@ -25,6 +25,6 @@ namespace MosaicCreator
         public DateTime Timestamp { get; }
 
         [JsonIgnore]
-        public ColorHistogram Histogram { get; set; } = null!;
+        public ColorHistogram Histogram { get; set; }
     }
 }

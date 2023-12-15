@@ -10,28 +10,17 @@ namespace MosaicCreator
     public class ColorHistogramTest
     {
         [Fact]
-        public void ShouldReturnCorrectColorCount()
-        {
-            var colorHistogram = new ColorHistogram();
-            colorHistogram.IncrementColorCount(Color.Red);
-            colorHistogram.IncrementColorCount(Color.Blue);
-            colorHistogram.IncrementColorCount(Color.Red);
-
-            Assert.Equal(2, colorHistogram.GetColorCount(Color.Red));
-            Assert.Equal(1, colorHistogram.GetColorCount(Color.Blue));
-        }
-
-        [Fact]
         public void ShouldReturnCorrectColorPercentage()
         {
-            var colorHistogramm = new ColorHistogram();
-            colorHistogramm.IncrementColorCount(Color.Red);
-            colorHistogramm.IncrementColorCount(Color.Blue);
-            colorHistogramm.IncrementColorCount(Color.Red);
-            colorHistogramm.IncrementColorCount(Color.Red);
+            var builder = ColorHistogram.GetBuilder();
+            builder.IncrementColorCount(Color.Red);
+            builder.IncrementColorCount(Color.Blue);
+            builder.IncrementColorCount(Color.Red);
+            builder.IncrementColorCount(Color.Red);
 
-            Assert.Equal(0.75, colorHistogramm.GetColorPercentage(Color.Red), 0.001);
-            Assert.Equal(0.25, colorHistogramm.GetColorPercentage(Color.Blue), 0.001);
+            var histogram = builder.Build();
+            Assert.Equal(0.75, histogram.GetColorPercentage(Color.Red), 0.001);
+            Assert.Equal(0.25, histogram.GetColorPercentage(Color.Blue), 0.001);
         }
     }
 }

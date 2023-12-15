@@ -7,30 +7,46 @@ using System.Threading.Tasks;
 
 namespace MosaicCreator
 {
-    internal class ColorHistogram
+    internal struct ColorHistogram
     {
-        private int[] _data;
-        private long _count;
+        private readonly float[] _data;
 
-        public ColorHistogram()
+        private ColorHistogram(int[] colorCounts, long totalCount)
         {
-            _data = new int[ColorValue.Max.AsInt + 1];
+            _data = new float[colorCounts.Length];
+            for (int i = 0; i < colorCounts.Length; i++)
+            {
+                _data[i] = (float)colorCounts[i] / totalCount;
+            }
         }
 
-        public void IncrementColorCount(Color color)
-        {
-            _data[ColorValue.Of(color).AsInt]++;
-            _count++;
-        }
-
-        public int GetColorCount(Color color)
+        public float GetColorPercentage(Color color)
         {
             return _data[ColorValue.Of(color).AsInt];
         }
 
-        public double GetColorPercentage(Color color)
+        public static Builder GetBuilder() => new Builder();
+
+        internal class Builder
         {
-            return GetColorCount(color) / (double)_count;
+            private readonly int[] _data;
+            private long _count;
+
+            internal Builder()
+            {
+                _data = new int[ColorValue.Max.AsInt + 1];
+            }
+
+            public void IncrementColorCount(Color color)
+            {
+                _data[ColorValue.Of(color).AsInt]++;
+                _count++;
+            }
+
+            public ColorHistogram Build()
+            {
+                return new ColorHistogram(_data, _count);
+            }
         }
     }
 }

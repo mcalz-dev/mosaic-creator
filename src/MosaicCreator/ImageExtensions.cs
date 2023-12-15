@@ -35,16 +35,16 @@ namespace MosaicCreator
 
         public static ColorHistogram GetColorHistogram(this Bitmap bitmap)
         {
-            var colorHistogram = new ColorHistogram();
+            var colorHistogramBuilder = ColorHistogram.GetBuilder();
             for (int y = 0; y < bitmap.Height; y++)
             {
                 for (int x = 0; x < bitmap.Width; x++)
                 {
-                    colorHistogram.IncrementColorCount(bitmap.GetPixel(x, y));
+                    colorHistogramBuilder.IncrementColorCount(bitmap.GetPixel(x, y));
                 }
             }
             
-            return colorHistogram;
+            return colorHistogramBuilder.Build();
         }
 
         private static Size CalculateNewSize(Size originalSize, Size maxDimensions)
