@@ -36,7 +36,8 @@ namespace MosaicCreator
             {
                 value = 0;
             }
-            return new ColorValue(value);
+
+            return FromValue(value);
         }
 
         public int AsInt { get; }
