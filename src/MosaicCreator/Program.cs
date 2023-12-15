@@ -10,15 +10,14 @@ namespace MosaicCreator
     {
         static void Main(string[] args)
         {
-            var configuration = (IConfiguration)new ConfigurationBuilder()
+            var configurationProvider = (IConfiguration)new ConfigurationBuilder()
                 .SetBasePath(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "MosaicCreator"))
                 .AddJsonFile("mosaicCreatorConfig.json")
                 .Build();
-            var inputImagePath = configuration["inputImagePath"]!;
-            var outputImagePath = configuration["outputImagePath"]!;
-            var mosaicTilesDirectory = configuration["mosaicTilesDirectory"]!;
-            var workingDirectory = configuration["workingDirectory"]!;
-            var projectInfoFile = Path.Combine(workingDirectory, "project.json");
+
+            var configuration = new Configuration();
+            configurationProvider.Bind(configuration);
+            var projectInfoFile = Path.Combine(configuration.WorkingDirectory, "project.json");
             var projectInfo = new ProjectInfo();
             if (File.Exists(projectInfoFile))
             {
@@ -27,7 +26,7 @@ namespace MosaicCreator
 
             var preprocessedImageSize = 64;
             var maxTileSize = new Size(preprocessedImageSize, preprocessedImageSize);
-            var imageFiles = EnumerateImageFiles(mosaicTilesDirectory);
+            var imageFiles = EnumerateImageFiles(configuration.MosaicTilesDirectory);
             projectInfo.RemoveObsoleteFiles(imageFiles);
             foreach (var imageFile in imageFiles)
             {
@@ -36,7 +35,7 @@ namespace MosaicCreator
                 if (preprocessedImageInfo == null || !File.Exists(preprocessedImageInfo.ReducedImagePath) || imageFileInfo.LastWriteTimeUtc > preprocessedImageInfo.Timestamp)
                 {
                     var fingerprint = CalculateFingerprintOfFile(imageFile);
-                    var processedFilePath = Path.Combine(workingDirectory, fingerprint + "_" + preprocessedImageSize + ".png");
+                    var processedFilePath = Path.Combine(configuration.WorkingDirectory, fingerprint + "_" + preprocessedImageSize + ".png");
                     if (!File.Exists(processedFilePath))
                     {
                         using var image = Image.FromFile(imageFile);
