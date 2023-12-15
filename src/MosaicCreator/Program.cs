@@ -1,4 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
+using System.Diagnostics;
 using System.Drawing;
 using System.Runtime.Intrinsics.Arm;
 
@@ -16,23 +18,41 @@ namespace MosaicCreator
             var outputImagePath = configuration["outputImagePath"]!;
             var mosaicTilesDirectory = configuration["mosaicTilesDirectory"]!;
             var workingDirectory = configuration["workingDirectory"]!;
+            var projectInfoFile = Path.Combine(workingDirectory, "project.json");
+            var projectInfo = new ProjectInfo();
+            if (File.Exists(projectInfoFile))
+            {
+                projectInfo = JsonConvert.DeserializeObject<ProjectInfo>(File.ReadAllText(projectInfoFile))!;
+            }
+
             var preprocessedImageSize = 64;
             var maxTileSize = new Size(preprocessedImageSize, preprocessedImageSize);
-
-
-            foreach (var imageFile in EnumerateImageFiles(mosaicTilesDirectory))
+            var imageFiles = EnumerateImageFiles(mosaicTilesDirectory);
+            projectInfo.RemoveObsoleteFiles(imageFiles);
+            foreach (var imageFile in imageFiles)
             {
-                var fingerprint = CalculateFingerprintOfFile(imageFile);
-                var processedFilePath = Path.Combine(workingDirectory, fingerprint + "_" + preprocessedImageSize + ".png");
-                if (File.Exists(processedFilePath))
+                var imageFileInfo = new FileInfo(imageFile);
+                var preprocessedImageInfo = projectInfo.PreprocessedImages.FirstOrDefault(x => Path.GetFullPath(x.OriginalImagePath) == Path.GetFullPath(imageFileInfo.FullName));
+                if (preprocessedImageInfo == null || !File.Exists(preprocessedImageInfo.ReducedImagePath) || imageFileInfo.LastWriteTimeUtc > preprocessedImageInfo.Timestamp)
                 {
-                    continue;
+                    var fingerprint = CalculateFingerprintOfFile(imageFile);
+                    var processedFilePath = Path.Combine(workingDirectory, fingerprint + "_" + preprocessedImageSize + ".png");
+                    if (!File.Exists(processedFilePath))
+                    {
+                        using var image = Image.FromFile(imageFile);
+                        using var processedImage = image.Scale(maxTileSize);
+                        processedImage.Save(processedFilePath);
+                    }
+
+                    preprocessedImageInfo = new PreprocessedImageInfo(imageFile, processedFilePath, imageFileInfo.LastWriteTimeUtc);
+                    projectInfo.Upsert(preprocessedImageInfo);
                 }
 
-                using var image = Image.FromFile(imageFile);
-                using var processedImage = image.Scale(maxTileSize);
-                processedImage.Save(processedFilePath);
+                using var reducedImage = new Bitmap(preprocessedImageInfo.ReducedImagePath);
+                preprocessedImageInfo.Histogram = reducedImage.GetColorHistogram();
             }
+
+            File.WriteAllText(projectInfoFile, JsonConvert.SerializeObject(projectInfo));
         }
 
         static IEnumerable<string> EnumerateImageFiles(string directory)
