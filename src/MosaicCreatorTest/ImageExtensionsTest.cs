@@ -41,5 +41,27 @@ namespace MosaicCreator
             Assert.Equal(desiredSize.Width, newImage.Width);
             Assert.Equal(desiredSize.Height, newImage.Height);
         }
+
+        [Fact]
+        public void ShouldCalculateColorHistogramOfRealImage()
+        {
+            using var image = new Bitmap("TestData/WidescreenImage.png");
+
+            image.GetColorHistogram();
+        }
+
+        [Theory]
+        [InlineData("TestData/Red.png", 255,0,0)]
+        [InlineData("TestData/Green.png", 0,255,0)]
+        [InlineData("TestData/Blue.png", 0,0,255)]
+        public void ShouldCalculateColorHistogramCorrectly(string file, int r, int g, int b)
+        {
+            var color = Color.FromArgb(r, g, b);
+            using var image = new Bitmap(file);
+
+            var histogram = image.GetColorHistogram();
+
+            Assert.Equal(1.0, histogram.GetColorPercentage(color));
+        }
     }
 }

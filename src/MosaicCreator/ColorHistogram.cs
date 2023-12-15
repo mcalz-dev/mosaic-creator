@@ -14,7 +14,7 @@ namespace MosaicCreator
 
         public ColorHistogram()
         {
-            _data = new int[ColorValue.Max.AsInt];
+            _data = new int[ColorValue.Max.AsInt + 1];
         }
 
         public void IncrementColorCount(Color color)
