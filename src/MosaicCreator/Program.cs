@@ -16,13 +16,14 @@ namespace MosaicCreator
             var outputImagePath = configuration["outputImagePath"]!;
             var mosaicTilesDirectory = configuration["mosaicTilesDirectory"]!;
             var workingDirectory = configuration["workingDirectory"]!;
-            var maxTileSize = new Size(64, 64);
+            var preprocessedImageSize = 64;
+            var maxTileSize = new Size(preprocessedImageSize, preprocessedImageSize);
 
 
             foreach (var imageFile in EnumerateImageFiles(mosaicTilesDirectory))
             {
                 var fingerprint = CalculateFingerprintOfFile(imageFile);
-                var processedFilePath = Path.Combine(workingDirectory, fingerprint + ".png");
+                var processedFilePath = Path.Combine(workingDirectory, fingerprint + "_" + preprocessedImageSize + ".png");
                 if (File.Exists(processedFilePath))
                 {
                     continue;
