@@ -20,12 +20,30 @@ namespace MosaicCreator
             }
         }
 
+        public readonly int Size => _data.Length;
+
+        public float this[int index] => _data[index];
+
         public float GetColorPercentage(Color color)
         {
             return _data[ColorValue.Of(color).AsInt];
         }
 
         public static Builder GetBuilder() => new Builder();
+
+        public static ColorHistogram Of(Bitmap bitmap)
+        {
+            var colorHistogramBuilder = GetBuilder();
+            for (int y = 0; y < bitmap.Height; y++)
+            {
+                for (int x = 0; x < bitmap.Width; x++)
+                {
+                    colorHistogramBuilder.IncrementColorCount(bitmap.GetPixel(x, y));
+                }
+            }
+
+            return colorHistogramBuilder.Build();
+        }
 
         internal class Builder
         {

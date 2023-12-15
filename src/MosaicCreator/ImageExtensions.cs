@@ -33,20 +33,6 @@ namespace MosaicCreator
             return resizedImage;
         }
 
-        public static ColorHistogram GetColorHistogram(this Bitmap bitmap)
-        {
-            var colorHistogramBuilder = ColorHistogram.GetBuilder();
-            for (int y = 0; y < bitmap.Height; y++)
-            {
-                for (int x = 0; x < bitmap.Width; x++)
-                {
-                    colorHistogramBuilder.IncrementColorCount(bitmap.GetPixel(x, y));
-                }
-            }
-            
-            return colorHistogramBuilder.Build();
-        }
-
         private static Size CalculateNewSize(Size originalSize, Size maxDimensions)
         {
             double aspectRatio = (double)originalSize.Width / originalSize.Height;
