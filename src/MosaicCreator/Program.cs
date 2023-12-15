@@ -1,8 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
-using System.Diagnostics;
 using System.Drawing;
-using System.Runtime.Intrinsics.Arm;
 
 namespace MosaicCreator
 {
@@ -18,6 +16,11 @@ namespace MosaicCreator
             var configuration = new Configuration();
             configurationProvider.Bind(configuration);
             var projectInfoFile = Path.Combine(configuration.WorkingDirectory, "project.json");
+            var projectInfo = GetProjectInfo(configuration, projectInfoFile);
+        }
+
+        private static ProjectInfo GetProjectInfo(Configuration configuration, string projectInfoFile)
+        {
             var projectInfo = new ProjectInfo();
             if (File.Exists(projectInfoFile))
             {
@@ -49,9 +52,11 @@ namespace MosaicCreator
 
                 using var reducedImage = new Bitmap(preprocessedImageInfo.ReducedImagePath);
                 preprocessedImageInfo.Histogram = reducedImage.GetColorHistogram();
+                preprocessedImageInfo.Size = reducedImage.Size;
             }
 
             File.WriteAllText(projectInfoFile, JsonConvert.SerializeObject(projectInfo));
+            return projectInfo;
         }
 
         static IEnumerable<string> EnumerateImageFiles(string directory)
