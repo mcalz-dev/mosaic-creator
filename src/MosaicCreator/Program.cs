@@ -17,6 +17,31 @@ namespace MosaicCreator
             configurationProvider.Bind(configuration);
             var projectInfoFile = Path.Combine(configuration.WorkingDirectory, "project.json");
             var projectInfo = BuildProjectInfo(configuration, projectInfoFile);
+            using var originalImage = new Bitmap(configuration.InputImagePath);
+            var processedImage = (Bitmap)originalImage.Clone();
+            var tileSize = 64;
+            var numberOfRuns = 100;
+            var costFunction = new SimpleColorCostFunction();
+            for (int i = 0; i < numberOfRuns; i++)
+            {
+                var x = Random.Shared.Next(originalImage.Width - tileSize);
+                var y = Random.Shared.Next(originalImage.Height - tileSize);
+                var sectionRectangle = new Rectangle(x, y, tileSize, tileSize);
+                using var extractedSection = (Bitmap)originalImage.Clone(sectionRectangle, originalImage.PixelFormat);
+                var best = projectInfo.PreprocessedImages.MinBy(x => costFunction.GetCostForApplying(x.ImageMetadata, ImageMetadata.Of(extractedSection)));
+                if (best == null)
+                {
+                    return;
+                }
+
+                using var sourceImage = new Bitmap(best.ReducedImagePath);
+                using (var graphics = Graphics.FromImage(processedImage))
+                {
+                    // Draw the replacement image onto the original image at the specified section
+                    graphics.DrawImage(sourceImage, sectionRectangle);
+                }
+                processedImage.Save("Test.png");
+            }
         }
 
         private static ProjectInfo BuildProjectInfo(Configuration configuration, string projectInfoFile)
