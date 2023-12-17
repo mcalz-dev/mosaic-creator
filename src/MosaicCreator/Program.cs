@@ -24,11 +24,13 @@ namespace MosaicCreator
             var costFunction = new SimpleColorCostFunction();
             for (int i = 0; i < numberOfRuns; i++)
             {
+                Console.WriteLine($"Run {i}");
                 var x = Random.Shared.Next(originalImage.Width - tileSize);
                 var y = Random.Shared.Next(originalImage.Height - tileSize);
                 var sectionRectangle = new Rectangle(x, y, tileSize, tileSize);
                 using var extractedSection = (Bitmap)originalImage.Clone(sectionRectangle, originalImage.PixelFormat);
-                var best = projectInfo.PreprocessedImages.MinBy(x => costFunction.GetCostForApplying(x.ImageMetadata, ImageMetadata.Of(extractedSection)));
+                var destinationMetadata = ImageMetadata.Of(extractedSection);
+                var best = projectInfo.PreprocessedImages.MinBy(x => costFunction.GetCostForApplying(x.ImageMetadata, destinationMetadata));
                 if (best == null)
                 {
                     return;
