@@ -9,7 +9,9 @@ namespace MosaicCreator
 {
     internal struct ColorHistogram
     {
+        private static readonly double BitmaskThreshold = 1.0 / ColorValue.Max.AsInt;
         private readonly float[] _data;
+        private readonly uint _bitmask;
 
         private ColorHistogram(int[] colorCounts, long totalCount)
         {
@@ -18,11 +20,15 @@ namespace MosaicCreator
             {
                 _data[i] = (float)colorCounts[i] / totalCount;
             }
+
+            _bitmask = _data.ToBitmask(x => x >=  BitmaskThreshold);
         }
 
         public readonly int Size => _data.Length;
 
         public float this[int index] => _data[index];
+
+        public uint AsBitmask => _bitmask;
 
         public float GetColorPercentage(Color color)
         {
