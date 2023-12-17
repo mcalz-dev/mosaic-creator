@@ -30,8 +30,17 @@ namespace MosaicCreator
 
         public static ColorValue Of(Color color)
         {
+            var saturation = color.GetSaturation();
+            if (saturation < 0.3)
+            {
+                var brightness = color.GetBrightness();
+                var grayScaleOffset = (Max.AsInt + 1) / 2;
+                var grayScaleSize = (Max.AsInt + 1) / 2;
+                return FromValue(grayScaleOffset + Math.Min(grayScaleSize - 1, (int)(brightness * grayScaleSize)));
+            }
+
             var hue = color.GetHue();
-            var value = (int)((Max.AsInt + 1) * (hue / 360));
+            var value = (int)((Max.AsInt + 1) * (hue / 360)) / 2;
             if (value == Max.AsInt + 1)
             {
                 value = 0;

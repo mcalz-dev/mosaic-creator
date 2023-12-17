@@ -20,7 +20,7 @@ namespace MosaicCreator
             using var originalImage = new Bitmap(configuration.InputImagePath);
             var processedImage = (Bitmap)originalImage.Clone();
             var tileSize = 64;
-            var numberOfRuns = 100;
+            var numberOfRuns = 1000;
             var costFunction = new SimpleColorCostFunction();
             for (int i = 0; i < numberOfRuns; i++)
             {
