@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing.Drawing2D;
+﻿using System.Drawing.Drawing2D;
 using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MosaicCreator
 {
@@ -31,6 +26,22 @@ namespace MosaicCreator
             }
 
             return resizedImage;
+        }
+
+        public static IReadOnlyList<Color> GetPixels(this Bitmap bitmap)
+        {
+            var pixels = new List<Color>();
+            foreach (var pixel in bitmap)
+            {
+                pixels.Add(pixel);
+            }
+
+            return pixels;
+        }
+
+        public static IEnumerator<Color> GetEnumerator(this Bitmap bitmap)
+        {
+            return new BitmapEnumerator(bitmap);
         }
 
         private static Size CalculateNewSize(Size originalSize, Size maxDimensions)
