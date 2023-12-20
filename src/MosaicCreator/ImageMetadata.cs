@@ -9,8 +9,9 @@ namespace MosaicCreator
 {
     internal struct ImageMetadata
     {
-        private ImageMetadata(Pictogram pictogram, ColorHistogram colorHistogram)
+        private ImageMetadata(Size size, Pictogram pictogram, ColorHistogram colorHistogram)
         {
+            Size = size;
             Pictogram = pictogram;
             ColorHistogram = colorHistogram;
         }
@@ -19,9 +20,11 @@ namespace MosaicCreator
 
         internal ColorHistogram ColorHistogram { get; }
 
+        internal Size Size { get; }
+
         internal static ImageMetadata Of(Bitmap image)
         {
-            return new ImageMetadata(Pictogram.Of(image), ColorHistogram.Of(image));
+            return new ImageMetadata(image.Size, Pictogram.Of(image), ColorHistogram.Of(image));
         }
     }
 }

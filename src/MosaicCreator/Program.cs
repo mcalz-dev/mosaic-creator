@@ -8,9 +8,8 @@ namespace MosaicCreator
 {
     internal class Program
     {
-        private static object _lock = new object();
         private static Configuration configuration = new Configuration();
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             var configurationProvider = (IConfiguration)new ConfigurationBuilder()
                 .SetBasePath(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "MosaicCreator"))
@@ -20,58 +19,18 @@ namespace MosaicCreator
             configurationProvider.Bind(configuration);
             var projectInfoFile = Path.Combine(configuration.WorkingDirectory, "project.json");
             var projectInfo = BuildProjectInfo(configuration, projectInfoFile);
+            var mosaicBuilder = new MosaicBuilder(configuration, projectInfo);
+            var mosaic = await mosaicBuilder.CreateMosaic();
             using var processedImage = new Bitmap(configuration.InputImagePath);
-            using var scaledDownImage = processedImage.Scale(new Size(1000, 1000));
-            var tileSize = 64;
-            var numberOfRuns = 10000;
-            var costFunctions = new List<ICostFunction>() { new SimpleColorCostFunction(), new PictogramComparisonCostFunction() };
             using (var graphics = Graphics.FromImage(processedImage))
             {
-                for (int i = 0; i < numberOfRuns; i++)
+                foreach (var tile in mosaic)
                 {
-                    Console.WriteLine($"Run {i}");
-                    ProcessTile(projectInfo, scaledDownImage, tileSize, costFunctions, graphics);
-
+                    tile.DrawOn(graphics, processedImage.Size);
                 }
             }
 
             processedImage.Save("Test.png");
-        }
-
-        private static void ProcessTile(ProjectInfo projectInfo, Bitmap originalImage, int tileSize, List<ICostFunction> costFunctions, Graphics graphics)
-        {
-            var x = Random.Shared.Next(originalImage.Width - tileSize);
-            var y = Random.Shared.Next(originalImage.Height - tileSize);
-            var sectionRectangle = new Rectangle(x, y, tileSize, tileSize);
-            var extractedSection = (Bitmap)originalImage.Clone(sectionRectangle, originalImage.PixelFormat);
-            var destinationMetadata = ImageMetadata.Of(extractedSection);
-            IEnumerable<PreprocessedImageInfo> contestants = projectInfo.PreprocessedImages;
-            foreach (var costFunction in costFunctions)
-            {
-                contestants = FilterContestants(contestants, costFunction, destinationMetadata).ToList();
-            }
-
-            var best = contestants.First();
-            var sourceImage = new Bitmap(best.ReducedImagePath);
-
-            lock (_lock)
-            {
-                graphics.DrawImage(sourceImage, sectionRectangle);
-            }
-        }
-
-        private static IEnumerable<PreprocessedImageInfo> FilterContestants(IEnumerable<PreprocessedImageInfo> contestants, ICostFunction costFunction, ImageMetadata destinationMetadata)
-        {
-            var costPerContestant = new List<(PreprocessedImageInfo Contestant, double Cost)>();
-            foreach (var contestant in contestants)
-            {
-                costPerContestant.Add(new(contestant, costFunction.GetCostForApplying(contestant.ImageMetadata, destinationMetadata)));
-            }
-
-            var ordered = costPerContestant.OrderBy(x => x.Cost).ToList();
-            var best = ordered.First();
-            var worst = ordered.Last();
-            return ordered.TakeWhile(x => x.Cost <= best.Cost + ((worst.Cost - best.Cost) * configuration.MinimumCostFactorForContestantToSurviveRound)).Select(x => x.Contestant);
         }
 
         private static ProjectInfo BuildProjectInfo(Configuration configuration, string projectInfoFile)
