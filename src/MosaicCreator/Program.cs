@@ -1,11 +1,13 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using System.Drawing;
+using System.Linq;
 
 namespace MosaicCreator
 {
     internal class Program
     {
+        private static object _lock = new object();
         static void Main(string[] args)
         {
             var configurationProvider = (IConfiguration)new ConfigurationBuilder()
@@ -20,29 +22,41 @@ namespace MosaicCreator
             using var originalImage = new Bitmap(configuration.InputImagePath);
             var processedImage = (Bitmap)originalImage.Clone();
             var tileSize = 64;
-            var numberOfRuns = 1000;
-            var costFunction = new SimpleColorCostFunction();
-            for (int i = 0; i < numberOfRuns; i++)
+            var numberOfRuns = 10000;
+            var costFunctions = new List<ICostFunction>() { new SimpleColorCostFunction(), new PictogramComparisonCostFunction() };
+            using (var graphics = Graphics.FromImage(processedImage))
             {
-                Console.WriteLine($"Run {i}");
-                var x = Random.Shared.Next(originalImage.Width - tileSize);
-                var y = Random.Shared.Next(originalImage.Height - tileSize);
-                var sectionRectangle = new Rectangle(x, y, tileSize, tileSize);
-                using var extractedSection = (Bitmap)originalImage.Clone(sectionRectangle, originalImage.PixelFormat);
-                var destinationMetadata = ImageMetadata.Of(extractedSection);
-                var best = projectInfo.PreprocessedImages.MinBy(x => costFunction.GetCostForApplying(x.ImageMetadata, destinationMetadata));
-                if (best == null)
+                for (int i = 0; i < numberOfRuns; i++)
                 {
-                    return;
-                }
+                    Console.WriteLine($"Run {i}");
+                    ProcessTile(projectInfo, originalImage, tileSize, costFunctions, graphics);
 
-                using var sourceImage = new Bitmap(best.ReducedImagePath);
-                using (var graphics = Graphics.FromImage(processedImage))
-                {
-                    // Draw the replacement image onto the original image at the specified section
-                    graphics.DrawImage(sourceImage, sectionRectangle);
                 }
-                processedImage.Save("Test.png");
+            }
+            processedImage.Save("Test.png");
+        }
+
+        private static void ProcessTile(ProjectInfo projectInfo, Bitmap originalImage, int tileSize, List<ICostFunction> costFunctions, Graphics graphics)
+        {
+            var x = Random.Shared.Next(originalImage.Width - tileSize);
+            var y = Random.Shared.Next(originalImage.Height - tileSize);
+            var sectionRectangle = new Rectangle(x, y, tileSize, tileSize);
+            var extractedSection = (Bitmap)originalImage.Clone(sectionRectangle, originalImage.PixelFormat);
+            var destinationMetadata = ImageMetadata.Of(extractedSection);
+            IEnumerable<PreprocessedImageInfo> contestants = projectInfo.PreprocessedImages;
+            foreach (var costFunction in costFunctions)
+            {
+                var orderedContestants = contestants.OrderBy(x => costFunction.GetCostForApplying(x.ImageMetadata, destinationMetadata)).ToList();
+                contestants = orderedContestants.Take(Math.Max(10, (int)(orderedContestants.Count * 0.05))).ToList();
+            }
+
+            var best = contestants.First();
+            var sourceImage = new Bitmap(best.ReducedImagePath);
+
+            // Draw the replacement image onto the original image at the specified section
+            lock (_lock)
+            {
+                graphics.DrawImage(sourceImage, sectionRectangle);
             }
         }
 
