@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 
@@ -8,6 +9,7 @@ namespace MosaicCreator
     internal class Program
     {
         private static object _lock = new object();
+        private static Configuration configuration = new Configuration();
         static void Main(string[] args)
         {
             var configurationProvider = (IConfiguration)new ConfigurationBuilder()
@@ -15,12 +17,11 @@ namespace MosaicCreator
                 .AddJsonFile("mosaicCreatorConfig.json")
                 .Build();
 
-            var configuration = new Configuration();
             configurationProvider.Bind(configuration);
             var projectInfoFile = Path.Combine(configuration.WorkingDirectory, "project.json");
             var projectInfo = BuildProjectInfo(configuration, projectInfoFile);
-            using var originalImage = new Bitmap(configuration.InputImagePath);
-            var processedImage = (Bitmap)originalImage.Clone();
+            using var processedImage = new Bitmap(configuration.InputImagePath);
+            using var scaledDownImage = processedImage.Scale(new Size(1000, 1000));
             var tileSize = 64;
             var numberOfRuns = 10000;
             var costFunctions = new List<ICostFunction>() { new SimpleColorCostFunction(), new PictogramComparisonCostFunction() };
@@ -29,10 +30,11 @@ namespace MosaicCreator
                 for (int i = 0; i < numberOfRuns; i++)
                 {
                     Console.WriteLine($"Run {i}");
-                    ProcessTile(projectInfo, originalImage, tileSize, costFunctions, graphics);
+                    ProcessTile(projectInfo, scaledDownImage, tileSize, costFunctions, graphics);
 
                 }
             }
+
             processedImage.Save("Test.png");
         }
 
@@ -46,18 +48,30 @@ namespace MosaicCreator
             IEnumerable<PreprocessedImageInfo> contestants = projectInfo.PreprocessedImages;
             foreach (var costFunction in costFunctions)
             {
-                var orderedContestants = contestants.OrderBy(x => costFunction.GetCostForApplying(x.ImageMetadata, destinationMetadata)).ToList();
-                contestants = orderedContestants.Take(Math.Max(10, (int)(orderedContestants.Count * 0.05))).ToList();
+                contestants = FilterContestants(contestants, costFunction, destinationMetadata).ToList();
             }
 
             var best = contestants.First();
             var sourceImage = new Bitmap(best.ReducedImagePath);
 
-            // Draw the replacement image onto the original image at the specified section
             lock (_lock)
             {
                 graphics.DrawImage(sourceImage, sectionRectangle);
             }
+        }
+
+        private static IEnumerable<PreprocessedImageInfo> FilterContestants(IEnumerable<PreprocessedImageInfo> contestants, ICostFunction costFunction, ImageMetadata destinationMetadata)
+        {
+            var costPerContestant = new List<(PreprocessedImageInfo Contestant, double Cost)>();
+            foreach (var contestant in contestants)
+            {
+                costPerContestant.Add(new(contestant, costFunction.GetCostForApplying(contestant.ImageMetadata, destinationMetadata)));
+            }
+
+            var ordered = costPerContestant.OrderBy(x => x.Cost).ToList();
+            var best = ordered.First();
+            var worst = ordered.Last();
+            return ordered.TakeWhile(x => x.Cost <= best.Cost + ((worst.Cost - best.Cost) * configuration.MinimumCostFactorForContestantToSurviveRound)).Select(x => x.Contestant);
         }
 
         private static ProjectInfo BuildProjectInfo(Configuration configuration, string projectInfoFile)

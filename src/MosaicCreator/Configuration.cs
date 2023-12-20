@@ -16,5 +16,7 @@ namespace MosaicCreator
         public string MosaicTilesDirectory { get; set; } = string.Empty;
 
         public string WorkingDirectory { get; set; } = string.Empty;
+
+        public double MinimumCostFactorForContestantToSurviveRound { get; set; } = 0.2;
     }
 }
