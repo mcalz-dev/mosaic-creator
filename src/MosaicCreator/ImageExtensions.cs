@@ -35,7 +35,7 @@ namespace MosaicCreator
 
         private static Size CalculateNewSize(Size originalSize, Size maxDimensions)
         {
-            double aspectRatio = (double)originalSize.Width / originalSize.Height;
+            double aspectRatio = originalSize.GetAspectRatio();
 
             int newWidth, newHeight;
 
