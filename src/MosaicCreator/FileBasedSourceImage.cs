@@ -10,11 +10,13 @@ namespace MosaicCreator
     internal class FileBasedSourceImage : ISourceImage
     {
         private ImageMetadata? metadata;
+        private Dictionary<RectangleF, ISourceImage> _cachedSections;
 
         public FileBasedSourceImage(string originalImagePath, string reducedImagePath)
         {
             OriginalImagePath = originalImagePath;
             ReducedImagePath = reducedImagePath;
+            _cachedSections = new Dictionary<RectangleF, ISourceImage>();
         }
 
         public string OriginalImagePath { get; }
@@ -32,7 +34,14 @@ namespace MosaicCreator
 
         public ISourceImage GetSection(RectangleF section)
         {
-            return new PartialSourceImage(OriginalImagePath, ReducedImagePath, section);
+            if (_cachedSections.TryGetValue(section, out ISourceImage? cachedSection))
+            {
+                return cachedSection;
+            }
+            
+            cachedSection = new PartialSourceImage(OriginalImagePath, ReducedImagePath, section);
+            _cachedSections.Add(section, cachedSection);
+            return cachedSection;
         }
 
         public Bitmap Load()
