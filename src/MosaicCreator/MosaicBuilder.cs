@@ -24,22 +24,24 @@ namespace MosaicCreator
             var result = new List<IMosaicTile>();
             using var inputImage = new Bitmap(_configuration.InputImagePath);
             using var scaledDownInputImage = inputImage.Scale(new Size(1000, 1000));
-            var numberOfRuns = 1000;
-            var costFunctions = new List<ICostFunction>() { new SimpleColorCostFunction(), new PictogramComparisonCostFunction() };
+            var numberOfRuns = 500;
+            var costFunctions = new List<ICostFunction>() { new ReuseCostFunction(), new SimpleColorCostFunction(), new PictogramComparisonCostFunction() };
+            var finalCostFunction = new PictogramComparisonCostFunction();
             using (var graphics = Graphics.FromImage(inputImage))
             {
                 for (int i = 0; i < numberOfRuns; i++)
                 {
                     Console.WriteLine($"Run {i}");
-                    result.Add(ProcessTile(scaledDownInputImage, costFunctions));
+                    result.Add(ProcessTile(scaledDownInputImage, costFunctions, finalCostFunction));
 
                 }
             }
 
-            return Task.FromResult(result);
+
+            return Task.FromResult(result.OrderByDescending(x => x.GetFinalCost()).ToList());
         }
 
-        private IMosaicTile ProcessTile(Bitmap inputImage, List<ICostFunction> costFunctions)
+        private IMosaicTile ProcessTile(Bitmap inputImage, List<ICostFunction> costFunctions, ICostFunction finalCostFunction)
         {
             var tileSize = Math.Max((int)(inputImage.Width * _configuration.RelativeTileSize), (int)(inputImage.Height * _configuration.RelativeTileSize));
             var x = Random.Shared.Next(inputImage.Width - tileSize);
@@ -54,7 +56,14 @@ namespace MosaicCreator
             }
 
             var best = contestants.First();
-            return new MosaicTile(best, new RectangleF((float)x / inputImage.Width, (float)y / inputImage.Height, (float)sectionRectangle.Width / inputImage.Width, (float)sectionRectangle.Height / inputImage.Height));
+            foreach (var costFunction in costFunctions)
+            {
+                costFunction.HandleWinner(best.ImageMetadata);
+            }
+
+            var finalCost = finalCostFunction.GetCostForApplying(best.ImageMetadata, destinationMetadata);
+
+            return new MosaicTile(best, new RectangleF((float)x / inputImage.Width, (float)y / inputImage.Height, (float)sectionRectangle.Width / inputImage.Width, (float)sectionRectangle.Height / inputImage.Height), finalCost);
         }
 
         private IEnumerable<PreprocessedImageInfo> FilterContestants(IEnumerable<PreprocessedImageInfo> contestants, ICostFunction costFunction, ImageMetadata destinationMetadata)

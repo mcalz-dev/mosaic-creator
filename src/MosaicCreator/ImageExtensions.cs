@@ -1,5 +1,6 @@
 ﻿using System.Drawing.Drawing2D;
 using System.Drawing;
+using System.Security.Cryptography;
 
 namespace MosaicCreator
 {
@@ -42,6 +43,13 @@ namespace MosaicCreator
         public static IEnumerator<Color> GetEnumerator(this Bitmap bitmap)
         {
             return new BitmapEnumerator(bitmap);
+        }
+
+        public static byte[] GetHash(this Bitmap bitmap)
+        {
+            var ic = new ImageConverter();
+            var bytes = (byte[])ic.ConvertTo(bitmap, typeof(byte[]))!;
+            return SHA256.HashData(bytes);
         }
 
         private static Size CalculateNewSize(Size originalSize, Size maxDimensions)

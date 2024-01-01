@@ -10,5 +10,7 @@ namespace MosaicCreator
     public interface IMosaicTile
     {
         public void DrawOn(Graphics graphics, Size graphicsSize);
+
+        public double GetFinalCost();
     }
 }

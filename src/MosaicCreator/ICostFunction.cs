@@ -19,6 +19,6 @@ namespace MosaicCreator
         /// </returns>
         double GetCostForApplying(ImageMetadata source, ImageMetadata destinationSection);
 
-        void HandleWinner(PreprocessedImageInfo winner);
+        void HandleWinner(ImageMetadata winner);
     }
 }

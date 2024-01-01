@@ -20,7 +20,7 @@ namespace MosaicCreator
             return totalCost / Pictogram.PixelCount;
         }
 
-        public void HandleWinner(PreprocessedImageInfo winner)
+        public void HandleWinner(ImageMetadata winner)
         {
             _ = winner;
         }

@@ -1,19 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MosaicCreator
 {
-    internal struct ImageMetadata
+    internal struct ImageMetadata : IEquatable<ImageMetadata>
     {
-        private ImageMetadata(Size size, Pictogram pictogram, ColorHistogram colorHistogram)
+        private ImageMetadata(Size size, Pictogram pictogram, ColorHistogram colorHistogram, byte[] hash)
         {
             Size = size;
             Pictogram = pictogram;
             ColorHistogram = colorHistogram;
+            Hash = hash;
         }
 
         internal Pictogram Pictogram { get; }
@@ -22,9 +19,27 @@ namespace MosaicCreator
 
         internal Size Size { get; }
 
+        internal byte[] Hash { get; }
+
         internal static ImageMetadata Of(Bitmap image)
         {
-            return new ImageMetadata(image.Size, Pictogram.Of(image), ColorHistogram.Of(image));
+            return new ImageMetadata(image.Size, Pictogram.Of(image), ColorHistogram.Of(image), image.GetHash());
+        }
+
+        public override bool Equals([NotNullWhen(true)] object? obj)
+        {
+            if (obj == null || obj is not  ImageMetadata) return false;
+            return Equals((ImageMetadata)obj);
+        }
+
+        public bool Equals(ImageMetadata other)
+        {
+            return Equals(Hash, other.Hash);
+        }
+
+        public override int GetHashCode()
+        {
+            return Hash.GetHashCode();
         }
     }
 }

@@ -27,7 +27,7 @@ namespace MosaicCreator
         public void RemoveObsoleteFiles(IEnumerable<string> availableFiles)
         {
             var lookup = new HashSet<string>(availableFiles.Select(Path.GetFullPath));
-            var obsoleteFiles = PreprocessedImages.Where(x => !lookup.Contains(Path.GetFullPath(x.OriginalImagePath)));
+            var obsoleteFiles = PreprocessedImages.Where(x => !lookup.Contains(Path.GetFullPath(x.OriginalImagePath))).ToList();
             foreach (var obsoleteFile in obsoleteFiles)
             {
                 PreprocessedImages.Remove(obsoleteFile);

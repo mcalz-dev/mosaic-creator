@@ -12,11 +12,13 @@ namespace MosaicCreator
         private readonly PreprocessedImageInfo _sourceImageInfo;
         private readonly RectangleF _sourceImageSection;
         private readonly RectangleF _destinationImageSection;
+        private readonly double _finalCost;
 
-        public MosaicTile(PreprocessedImageInfo sourceImage, RectangleF destinationImageSection)
+        public MosaicTile(PreprocessedImageInfo sourceImage, RectangleF destinationImageSection, double finalCost)
         {
             _sourceImageInfo = sourceImage;
             _destinationImageSection = destinationImageSection;
+            _finalCost = finalCost;
             _sourceImageSection = new Rectangle(new Point(0, 0), new Size(1, 1));
         }
 
@@ -27,6 +29,11 @@ namespace MosaicCreator
             using var relevantSection = sourceImage.Clone(Scale(_sourceImageSection, sourceImage.Size), sourceImage.PixelFormat);
             using var resizedRelevantSection = relevantSection.Resize(destinationSection.Size);
             graphics.DrawImage(resizedRelevantSection, destinationSection.Location);
+        }
+
+        public double GetFinalCost()
+        {
+            return _finalCost;
         }
 
         private Rectangle Scale(RectangleF inputRectangle, Size size)
