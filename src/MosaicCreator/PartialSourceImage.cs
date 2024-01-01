@@ -50,15 +50,16 @@ namespace MosaicCreator
             var section = Scale(_section, fullImage.Size);
             using var imageSection = fullImage.Clone(section, fullImage.PixelFormat);
             return ImageMetadata.Of(imageSection);
+
         }
 
         private Rectangle Scale(RectangleF inputRectangle, Size size)
         {
-            return new Rectangle(
-                (int)Math.Round(inputRectangle.X * size.Width),
-                (int)Math.Round(inputRectangle.Y * size.Height),
-                (int)Math.Round(inputRectangle.Width * size.Width),
-                (int)Math.Round(inputRectangle.Height * size.Height));
+            var x = Math.Min(size.Width - 1, (int)Math.Round(inputRectangle.X * size.Width));
+            var y = Math.Min(size.Height - 1, (int)Math.Round(inputRectangle.Y * size.Height));
+            var width = Math.Min(size.Width - x, (int)Math.Round(inputRectangle.Width * size.Width));
+            var height = Math.Min(size.Height - y, (int)Math.Round(inputRectangle.Height * size.Height));
+            return new Rectangle(x, y, width, height);
         }
 
         private RectangleF GetSubSection(RectangleF subSection)
