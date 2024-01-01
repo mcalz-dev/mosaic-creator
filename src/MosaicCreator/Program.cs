@@ -63,9 +63,6 @@ namespace MosaicCreator
                     preprocessedImageInfo = new PreprocessedImageInfo(imageFile, processedFilePath, imageFileInfo.LastWriteTimeUtc);
                     projectInfo.Upsert(preprocessedImageInfo);
                 }
-
-                using var reducedImage = new Bitmap(preprocessedImageInfo.ReducedImagePath);
-                preprocessedImageInfo.ImageMetadata = ImageMetadata.Of(reducedImage);
             }
 
             File.WriteAllText(projectInfoFile, JsonConvert.SerializeObject(projectInfo));

@@ -49,7 +49,7 @@ namespace MosaicCreator
             var sectionRectangle = new Rectangle(x, y, tileSize, tileSize);
             var extractedSection = (Bitmap)inputImage.Clone(sectionRectangle, inputImage.PixelFormat);
             var destinationMetadata = ImageMetadata.Of(extractedSection);
-            IEnumerable<PreprocessedImageInfo> contestants = _projectInfo.PreprocessedImages;
+            IEnumerable<ISourceImage> contestants = _projectInfo.PreprocessedImages.Select(image => image.Load());
             foreach (var costFunction in costFunctions)
             {
                 contestants = FilterContestants(contestants, costFunction, destinationMetadata).ToList();
@@ -58,20 +58,20 @@ namespace MosaicCreator
             var best = contestants.First();
             foreach (var costFunction in costFunctions)
             {
-                costFunction.HandleWinner(best.ImageMetadata);
+                costFunction.HandleWinner(best.Metadata);
             }
 
-            var finalCost = finalCostFunction.GetCostForApplying(best.ImageMetadata, destinationMetadata);
+            var finalCost = finalCostFunction.GetCostForApplying(best.Metadata, destinationMetadata);
 
             return new MosaicTile(best, new RectangleF((float)x / inputImage.Width, (float)y / inputImage.Height, (float)sectionRectangle.Width / inputImage.Width, (float)sectionRectangle.Height / inputImage.Height), finalCost);
         }
 
-        private IEnumerable<PreprocessedImageInfo> FilterContestants(IEnumerable<PreprocessedImageInfo> contestants, ICostFunction costFunction, ImageMetadata destinationMetadata)
+        private IEnumerable<ISourceImage> FilterContestants(IEnumerable<ISourceImage> contestants, ICostFunction costFunction, ImageMetadata destinationMetadata)
         {
-            var costPerContestant = new List<(PreprocessedImageInfo Contestant, double Cost)>();
+            var costPerContestant = new List<(ISourceImage Contestant, double Cost)>();
             foreach (var contestant in contestants)
             {
-                costPerContestant.Add(new(contestant, costFunction.GetCostForApplying(contestant.ImageMetadata, destinationMetadata)));
+                costPerContestant.Add(new(contestant, costFunction.GetCostForApplying(contestant.Metadata, destinationMetadata)));
             }
 
             var ordered = costPerContestant.OrderBy(x => x.Cost).ToList();

@@ -10,11 +10,14 @@ namespace MosaicCreator
 {
     internal class PreprocessedImageInfo
     {
+        private readonly ISourceImage _sourceImage;
+
         public PreprocessedImageInfo(string originalImagePath, string reducedImagePath, DateTime timestamp)
         {
             OriginalImagePath = Path.GetFullPath(originalImagePath);
             ReducedImagePath = Path.GetFullPath(reducedImagePath);
             Timestamp = timestamp;
+            _sourceImage = new FileBasedSourceImage(OriginalImagePath, ReducedImagePath);
         }
 
         
@@ -25,7 +28,9 @@ namespace MosaicCreator
 
         public DateTime Timestamp { get; }
 
-        [JsonIgnore]
-        public ImageMetadata ImageMetadata { get; set; }
+        public ISourceImage Load()
+        {
+            return _sourceImage;
+        }
     }
 }
