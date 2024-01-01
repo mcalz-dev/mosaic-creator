@@ -12,5 +12,7 @@ namespace MosaicCreator
         ImageMetadata Metadata { get; }
 
         Bitmap Load();
+
+        ISourceImage GetSection(RectangleF section);
     }
 }

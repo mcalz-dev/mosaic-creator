@@ -30,6 +30,11 @@ namespace MosaicCreator
             }
         }
 
+        public ISourceImage GetSection(RectangleF section)
+        {
+            return new PartialSourceImage(OriginalImagePath, ReducedImagePath, section);
+        }
+
         public Bitmap Load()
         {
             return new Bitmap(OriginalImagePath);
