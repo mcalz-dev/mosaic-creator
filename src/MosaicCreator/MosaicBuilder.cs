@@ -24,15 +24,21 @@ namespace MosaicCreator
             var result = new List<IMosaicTile>();
             using var inputImage = new Bitmap(_configuration.InputImagePath);
             using var scaledDownInputImage = inputImage.Scale(new Size(1000, 1000));
-            var numberOfRuns = 500;
-            var costFunctions = new List<ICostFunction>() { new ReuseCostFunction(), new SimpleColorCostFunction(), new PictogramComparisonCostFunction() };
+            var numberOfRuns = 100;
+            var reuseCostFunction = new ReuseCostFunction();
+            var pipeline = new List<ISourceImageSelectionPipelineOperation>()
+            {
+                new FilteringSourceImageSelectionPipelineOperation(reuseCostFunction, _configuration.MinimumCostFactorForContestantToSurviveRound),
+                new FilteringSourceImageSelectionPipelineOperation(new SimpleColorCostFunction(), _configuration.MinimumCostFactorForContestantToSurviveRound),
+                new FilteringSourceImageSelectionPipelineOperation(new PictogramComparisonCostFunction(), _configuration.MinimumCostFactorForContestantToSurviveRound)
+            };
             var finalCostFunction = new PictogramComparisonCostFunction();
             using (var graphics = Graphics.FromImage(inputImage))
             {
                 for (int i = 0; i < numberOfRuns; i++)
                 {
                     Console.WriteLine($"Run {i}");
-                    result.Add(ProcessTile(scaledDownInputImage, costFunctions, finalCostFunction));
+                    result.Add(ProcessTile(scaledDownInputImage, pipeline, reuseCostFunction, finalCostFunction));
 
                 }
             }
@@ -41,7 +47,7 @@ namespace MosaicCreator
             return Task.FromResult(result.OrderByDescending(x => x.GetFinalCost()).ToList());
         }
 
-        private IMosaicTile ProcessTile(Bitmap inputImage, List<ICostFunction> costFunctions, ICostFunction finalCostFunction)
+        private IMosaicTile ProcessTile(Bitmap inputImage, List<ISourceImageSelectionPipelineOperation> pipeline, ReuseCostFunction reuseCostFunction, ICostFunction finalCostFunction)
         {
             var tileSize = Math.Max((int)(inputImage.Width * _configuration.RelativeTileSize), (int)(inputImage.Height * _configuration.RelativeTileSize));
             var x = Random.Shared.Next(inputImage.Width - tileSize);
@@ -50,15 +56,16 @@ namespace MosaicCreator
             var extractedSection = (Bitmap)inputImage.Clone(sectionRectangle, inputImage.PixelFormat);
             var destinationMetadata = ImageMetadata.Of(extractedSection);
             IEnumerable<ISourceImage> contestants = _projectInfo.PreprocessedImages.Select(image => image.Load());
-            foreach (var costFunction in costFunctions)
+            foreach (var operation in pipeline)
             {
-                contestants = FilterContestants(contestants, costFunction, destinationMetadata).ToList();
+                contestants = operation.Apply(contestants, destinationMetadata);
             }
 
+            contestants = contestants.OrderBy(x => finalCostFunction.GetCostForApplying(x.Metadata, destinationMetadata)).ToList();
             var best = contestants.First();
-            foreach (var costFunction in costFunctions)
+            foreach (var costFunction in pipeline)
             {
-                costFunction.HandleWinner(best.Metadata);
+                reuseCostFunction.HandleWinner(best.Metadata);
             }
 
             var finalCost = finalCostFunction.GetCostForApplying(best.Metadata, destinationMetadata);
@@ -66,18 +73,6 @@ namespace MosaicCreator
             return new MosaicTile(best, new RectangleF((float)x / inputImage.Width, (float)y / inputImage.Height, (float)sectionRectangle.Width / inputImage.Width, (float)sectionRectangle.Height / inputImage.Height), finalCost);
         }
 
-        private IEnumerable<ISourceImage> FilterContestants(IEnumerable<ISourceImage> contestants, ICostFunction costFunction, ImageMetadata destinationMetadata)
-        {
-            var costPerContestant = new List<(ISourceImage Contestant, double Cost)>();
-            foreach (var contestant in contestants)
-            {
-                costPerContestant.Add(new(contestant, costFunction.GetCostForApplying(contestant.Metadata, destinationMetadata)));
-            }
 
-            var ordered = costPerContestant.OrderBy(x => x.Cost).ToList();
-            var best = ordered.First();
-            var worst = ordered.Last();
-            return ordered.TakeWhile(x => x.Cost <= best.Cost + ((worst.Cost - best.Cost) * _configuration.MinimumCostFactorForContestantToSurviveRound)).Select(x => x.Contestant);
-        }
     }
 }

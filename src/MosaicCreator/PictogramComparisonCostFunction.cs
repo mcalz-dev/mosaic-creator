@@ -20,11 +20,6 @@ namespace MosaicCreator
             return totalCost / Pictogram.PixelCount;
         }
 
-        public void HandleWinner(ImageMetadata winner)
-        {
-            _ = winner;
-        }
-
         private static double GetDifference(Color a, Color b)
         {
             var cost = (GetChannelDifference(a.R, b.R) + GetChannelDifference(a.G, b.G) + GetChannelDifference(a.B, b.B)) / 3;

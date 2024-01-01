@@ -21,10 +21,5 @@ namespace MosaicCreator
 
             return totalCost / 2;
         }
-
-        public void HandleWinner(ImageMetadata winner)
-        {
-            _ = winner;
-        }
     }
 }

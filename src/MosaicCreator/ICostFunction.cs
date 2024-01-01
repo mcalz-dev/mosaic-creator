@@ -18,7 +18,5 @@ namespace MosaicCreator
         /// A value from 0.0 to 1.0, where 0.0 indicates no cost and 1.0 the maximum cost.
         /// </returns>
         double GetCostForApplying(ImageMetadata source, ImageMetadata destinationSection);
-
-        void HandleWinner(ImageMetadata winner);
     }
 }
