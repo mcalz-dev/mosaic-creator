@@ -26,12 +26,13 @@ namespace MosaicCreator
             using var scaledDownInputImage = inputImage.Scale(new Size(1000, 1000));
             var numberOfRuns = 1000;
             var reuseCostFunction = new ReuseCostFunction();
+            var baseFilter = new PercentageRelativeToValuesFilterFunction(_configuration.MinimumCostFactorForContestantToSurviveRound);
             var pipeline = new List<ISourceImageSelectionPipelineOperation>()
             {
-                new FilteringSourceImageSelectionPipelineOperation(reuseCostFunction, _configuration.MinimumCostFactorForContestantToSurviveRound),
-                new FilteringSourceImageSelectionPipelineOperation(new SimpleColorCostFunction(), _configuration.MinimumCostFactorForContestantToSurviveRound),
+                new FilteringSourceImageSelectionPipelineOperation(reuseCostFunction, baseFilter),
+                new FilteringSourceImageSelectionPipelineOperation(new SimpleColorCostFunction(), baseFilter),
                 new MutatingSourceImageSelectionPipelineOperation(),
-                new FilteringSourceImageSelectionPipelineOperation(new PictogramComparisonCostFunction(), _configuration.MinimumCostFactorForContestantToSurviveRound)
+                new FilteringSourceImageSelectionPipelineOperation(new PictogramComparisonCostFunction(), baseFilter)
             };
             var finalCostFunction = new PictogramComparisonCostFunction();
             using (var graphics = Graphics.FromImage(inputImage))

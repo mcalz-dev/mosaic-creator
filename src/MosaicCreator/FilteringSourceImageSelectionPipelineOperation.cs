@@ -11,12 +11,12 @@ namespace MosaicCreator
     internal class FilteringSourceImageSelectionPipelineOperation : ISourceImageSelectionPipelineOperation
     {
         private readonly ICostFunction _costFunction;
-        private readonly double _minimumCostFactorForContestantToSurviveRound;
+        private readonly IFilterFunction _filterFunction;
 
-        public FilteringSourceImageSelectionPipelineOperation(ICostFunction costFunction, double minimumCostFactorForContestantToSurviveRound)
+        public FilteringSourceImageSelectionPipelineOperation(ICostFunction costFunction, IFilterFunction filterFunction)
         {
             _costFunction = costFunction;
-            _minimumCostFactorForContestantToSurviveRound = minimumCostFactorForContestantToSurviveRound;
+            _filterFunction = filterFunction;
         }
 
         public IEnumerable<ISourceImage> Apply(IEnumerable<ISourceImage> sourceImages, ImageMetadata destinationMetadata)
@@ -28,9 +28,7 @@ namespace MosaicCreator
             }
 
             var ordered = costPerContestant.OrderBy(x => x.Cost).ToList();
-            var best = ordered.First();
-            var worst = ordered.Last();
-            return ordered.TakeWhile(x => x.Cost <= best.Cost + ((worst.Cost - best.Cost) * _minimumCostFactorForContestantToSurviveRound)).Select(x => x.Contestant);
+            return _filterFunction.Filter(ordered);
         }
     }
 }
