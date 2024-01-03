@@ -7,6 +7,7 @@ namespace MosaicCreator
     {
         private ImageMetadata(Size size, Pictogram pictogram, ColorHistogram colorHistogram, byte[] hash)
         {
+            AspectRatio = size.GetAspectRatio();
             Size = size;
             Pictogram = pictogram;
             ColorHistogram = colorHistogram;
@@ -18,6 +19,8 @@ namespace MosaicCreator
         internal ColorHistogram ColorHistogram { get; }
 
         internal Size Size { get; }
+
+        internal double AspectRatio { get; }
 
         internal byte[] Hash { get; }
 

@@ -29,6 +29,7 @@ namespace MosaicCreator
             var baseFilter = new PercentageRelativeToValuesFilterFunction(_configuration.MinimumCostFactorForContestantToSurviveRound);
             var pipeline = new List<ISourceImageSelectionPipelineOperation>()
             {
+                new FilteringSourceImageSelectionPipelineOperation(new AspectRatioCostFunction(), new AbsoluteMaxCostFilterFunction(0.1)),
                 new FilteringSourceImageSelectionPipelineOperation(reuseCostFunction, baseFilter),
                 new FilteringSourceImageSelectionPipelineOperation(new SimpleColorCostFunction(), baseFilter),
                 new MutatingSourceImageSelectionPipelineOperation(),
