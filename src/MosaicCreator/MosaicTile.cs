@@ -28,7 +28,7 @@ namespace MosaicCreator
             using var sourceImage = _sourceImage.Load();
             using var relevantSection = sourceImage.Clone(Scale(_sourceImageSection, sourceImage.Size), sourceImage.PixelFormat);
             using var resizedRelevantSection = relevantSection.Resize(destinationSection.Size);
-            graphics.DrawImage(resizedRelevantSection, destinationSection.Location);
+            graphics.DrawImage(resizedRelevantSection, destinationSection);
         }
 
         public double GetFinalCost()
