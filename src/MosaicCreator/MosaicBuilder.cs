@@ -52,10 +52,26 @@ namespace MosaicCreator
 
         private IMosaicTile ProcessTile(Bitmap inputImage, List<ISourceImageSelectionPipelineOperation> pipeline, ReuseCostFunction reuseCostFunction, ICostFunction finalCostFunction)
         {
-            var tileSize = Math.Max((int)(inputImage.Width * _configuration.RelativeTileSize), (int)(inputImage.Height * _configuration.RelativeTileSize));
-            var x = Random.Shared.Next(inputImage.Width - tileSize);
-            var y = Random.Shared.Next(inputImage.Height - tileSize);
-            var sectionRectangle = new Rectangle(x, y, tileSize, tileSize);
+            var tileAspectRatio = 0.0;
+            while (tileAspectRatio < 0.5 || tileAspectRatio > 2)
+            {
+                tileAspectRatio = _projectInfo.PreprocessedImages[Random.Shared.Next(_projectInfo.PreprocessedImages.Count)].Load().Metadata.AspectRatio;
+            }
+
+            var tileWidth = Math.Max((int)(inputImage.Width * _configuration.RelativeTileSize), (int)(inputImage.Height * _configuration.RelativeTileSize));
+            var tileHeight = tileWidth;
+            if (tileAspectRatio < 1)
+            {
+                tileWidth = (int)(tileHeight * tileAspectRatio);
+            }
+            else
+            {
+                tileHeight = (int)(tileWidth / tileAspectRatio);
+            }
+
+            var x = Random.Shared.Next(inputImage.Width - tileWidth);
+            var y = Random.Shared.Next(inputImage.Height - tileHeight);
+            var sectionRectangle = new Rectangle(x, y, tileWidth, tileHeight);
             var extractedSection = (Bitmap)inputImage.Clone(sectionRectangle, inputImage.PixelFormat);
             var destinationMetadata = ImageMetadata.Of(extractedSection);
             IEnumerable<ISourceImage> contestants = _projectInfo.PreprocessedImages.Select(image => image.Load());
