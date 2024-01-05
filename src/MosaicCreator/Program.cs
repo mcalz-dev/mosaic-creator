@@ -47,7 +47,7 @@ namespace MosaicCreator
                 Mode.Random => new SourceImageSelectionPipelineBuilder(configuration)
                                         .FilterBy(new AspectRatioCostFunction(), new AbsoluteMaxCostFilterFunction(0.1))
                                         .RemoveRecentlyUsedImages()
-                                        .FinallyFilterBy(new ConstantCostFunction(0.0)),
+                                        .FinallyFilterBy(new RandomCostFunction()),
                 _ => throw new NotImplementedException("Configured mode is unknown!"),
             };
         }
