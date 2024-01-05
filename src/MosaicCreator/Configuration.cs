@@ -20,5 +20,7 @@ namespace MosaicCreator
         public double MinimumCostFactorForContestantToSurviveRound { get; set; } = 0.2;
 
         public double RelativeTileSize { get; set; } = 0.1;
+
+        public int NumberOfTiles { get; set; } = 500;
     }
 }

@@ -24,7 +24,7 @@ namespace MosaicCreator
             var result = new List<IMosaicTile>();
             using var inputImage = new Bitmap(_configuration.InputImagePath);
             using var scaledDownInputImage = inputImage.Scale(new Size(1000, 1000));
-            var numberOfRuns = 1000;
+            var numberOfRuns = _configuration.NumberOfTiles;
             var reuseCostFunction = new ReuseCostFunction();
             var baseFilter = new PercentageRelativeToValuesFilterFunction(_configuration.MinimumCostFactorForContestantToSurviveRound);
             var pipeline = new List<ISourceImageSelectionPipelineOperation>()
@@ -36,16 +36,11 @@ namespace MosaicCreator
                 new FilteringSourceImageSelectionPipelineOperation(new PictogramComparisonCostFunction(), baseFilter)
             };
             var finalCostFunction = new PictogramComparisonCostFunction();
-            using (var graphics = Graphics.FromImage(inputImage))
+            for (int i = 0; i < numberOfRuns; i++)
             {
-                for (int i = 0; i < numberOfRuns; i++)
-                {
-                    Console.WriteLine($"Run {i}");
-                    result.Add(ProcessTile(scaledDownInputImage, pipeline, reuseCostFunction, finalCostFunction));
-
-                }
+                Console.WriteLine($"Run {i}");
+                result.Add(ProcessTile(scaledDownInputImage, pipeline, reuseCostFunction, finalCostFunction));
             }
-
 
             return Task.FromResult(result.OrderByDescending(x => x.GetFinalCost()).ToList());
         }
