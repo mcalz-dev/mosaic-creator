@@ -22,5 +22,7 @@ namespace MosaicCreator
         public double RelativeTileSize { get; set; } = 0.1;
 
         public int NumberOfTiles { get; set; } = 500;
+
+        public Mode Mode { get; set; } = Mode.Default;
     }
 }

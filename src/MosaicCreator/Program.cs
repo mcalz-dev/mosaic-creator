@@ -20,7 +20,8 @@ namespace MosaicCreator
             var projectInfoFile = Path.Combine(configuration.WorkingDirectory, "project.json");
             var projectInfo = BuildProjectInfo(configuration, projectInfoFile);
             var mosaicBuilder = new MosaicBuilder(configuration, projectInfo);
-            var mosaic = await mosaicBuilder.CreateMosaic();
+            var pipeline = BuildPipeline();
+            var mosaic = await mosaicBuilder.CreateMosaic(pipeline);
             using var processedImage = new Bitmap(configuration.InputImagePath);
             using (var graphics = Graphics.FromImage(processedImage))
             {
@@ -31,6 +32,24 @@ namespace MosaicCreator
             }
 
             processedImage.Save("Test.png");
+        }
+
+        private static SourceImageSelectionPipeline BuildPipeline()
+        {
+            return configuration.Mode switch
+            {
+                Mode.Default => new SourceImageSelectionPipelineBuilder(configuration)
+                                        .FilterBy(new AspectRatioCostFunction(), new AbsoluteMaxCostFilterFunction(0.1))
+                                        .RemoveRecentlyUsedImages()
+                                        .FilterBy(new SimpleColorCostFunction())
+                                        .MutateImages()
+                                        .FinallyFilterBy(new PictogramComparisonCostFunction()),
+                Mode.Random => new SourceImageSelectionPipelineBuilder(configuration)
+                                        .FilterBy(new AspectRatioCostFunction(), new AbsoluteMaxCostFilterFunction(0.1))
+                                        .RemoveRecentlyUsedImages()
+                                        .FinallyFilterBy(new ConstantCostFunction(0.0)),
+                _ => throw new NotImplementedException("Configured mode is unknown!"),
+            };
         }
 
         private static ProjectInfo BuildProjectInfo(Configuration configuration, string projectInfoFile)

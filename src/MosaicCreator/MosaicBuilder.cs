@@ -19,33 +19,22 @@ namespace MosaicCreator
             _projectInfo = projectInfo;
         }
 
-        public Task<List<IMosaicTile>> CreateMosaic()
+        public Task<List<IMosaicTile>> CreateMosaic(SourceImageSelectionPipeline pipeline)
         {
             var result = new List<IMosaicTile>();
             using var inputImage = new Bitmap(_configuration.InputImagePath);
             using var scaledDownInputImage = inputImage.Scale(new Size(1000, 1000));
             var numberOfRuns = _configuration.NumberOfTiles;
-            var reuseCostFunction = new ReuseCostFunction();
-            var baseFilter = new PercentageRelativeToValuesFilterFunction(_configuration.MinimumCostFactorForContestantToSurviveRound);
-            var pipeline = new List<ISourceImageSelectionPipelineOperation>()
-            {
-                new FilteringSourceImageSelectionPipelineOperation(new AspectRatioCostFunction(), new AbsoluteMaxCostFilterFunction(0.1)),
-                new FilteringSourceImageSelectionPipelineOperation(reuseCostFunction, baseFilter),
-                new FilteringSourceImageSelectionPipelineOperation(new SimpleColorCostFunction(), baseFilter),
-                new MutatingSourceImageSelectionPipelineOperation(),
-                new FilteringSourceImageSelectionPipelineOperation(new PictogramComparisonCostFunction(), baseFilter)
-            };
-            var finalCostFunction = new PictogramComparisonCostFunction();
             for (int i = 0; i < numberOfRuns; i++)
             {
                 Console.WriteLine($"Run {i}");
-                result.Add(ProcessTile(scaledDownInputImage, pipeline, reuseCostFunction, finalCostFunction));
+                result.Add(ProcessTile(scaledDownInputImage, pipeline));
             }
 
             return Task.FromResult(result.OrderByDescending(x => x.GetFinalCost()).ToList());
         }
 
-        private IMosaicTile ProcessTile(Bitmap inputImage, IList<ISourceImageSelectionPipelineOperation> pipeline, ReuseCostFunction reuseCostFunction, ICostFunction finalCostFunction)
+        private IMosaicTile ProcessTile(Bitmap inputImage, SourceImageSelectionPipeline pipeline)
         {
             var tileAspectRatio = 0.0;
             while (tileAspectRatio < 0.5 || tileAspectRatio > 2)
@@ -70,20 +59,15 @@ namespace MosaicCreator
             var extractedSection = (Bitmap)inputImage.Clone(sectionRectangle, inputImage.PixelFormat);
             var destinationMetadata = ImageMetadata.Of(extractedSection);
             IEnumerable<ISourceImage> contestants = _projectInfo.PreprocessedImages.Select(image => image.Load());
-            foreach (var operation in pipeline)
+            foreach (var operation in pipeline.Operations)
             {
                 contestants = operation.Apply(contestants, destinationMetadata);
             }
 
-            contestants = contestants.OrderBy(x => finalCostFunction.GetCostForApplying(x.Metadata, destinationMetadata)).ToList();
+            contestants = contestants.OrderBy(x => pipeline.FinalCostFunction.GetCostForApplying(x.Metadata, destinationMetadata)).ToList();
             var best = contestants.First();
-            foreach (var costFunction in pipeline)
-            {
-                reuseCostFunction.HandleWinner(best.Metadata);
-            }
-
-            var finalCost = finalCostFunction.GetCostForApplying(best.Metadata, destinationMetadata);
-
+            pipeline.ReuseCostFunction?.HandleWinner(best.Metadata);
+            var finalCost = pipeline.FinalCostFunction.GetCostForApplying(best.Metadata, destinationMetadata);
             return new MosaicTile(best, new RectangleF((float)x / inputImage.Width, (float)y / inputImage.Height, (float)sectionRectangle.Width / inputImage.Width, (float)sectionRectangle.Height / inputImage.Height), finalCost);
         }
 
