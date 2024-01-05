@@ -45,7 +45,7 @@ namespace MosaicCreator
             return Task.FromResult(result.OrderByDescending(x => x.GetFinalCost()).ToList());
         }
 
-        private IMosaicTile ProcessTile(Bitmap inputImage, List<ISourceImageSelectionPipelineOperation> pipeline, ReuseCostFunction reuseCostFunction, ICostFunction finalCostFunction)
+        private IMosaicTile ProcessTile(Bitmap inputImage, IList<ISourceImageSelectionPipelineOperation> pipeline, ReuseCostFunction reuseCostFunction, ICostFunction finalCostFunction)
         {
             var tileAspectRatio = 0.0;
             while (tileAspectRatio < 0.5 || tileAspectRatio > 2)
